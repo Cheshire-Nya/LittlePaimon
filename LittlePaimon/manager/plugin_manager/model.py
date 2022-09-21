@@ -42,6 +42,7 @@ class Config(BaseModel):
     sim_gacha_cd_group: int = Field(30, alias='模拟抽卡群冷却')
     sim_gacha_cd_member: int = Field(60, alias='模拟抽卡群员冷却')
     sim_gacha_max: int = Field(5, alias='模拟抽卡单次最多十连数')
+    sim_gacha_times_daily: int = Field(2, alias='每日抽卡次数')
 
     auto_myb_enable: bool = Field(True, alias='米游币自动获取开关')
     auto_myb_hour: int = Field(8, alias='米游币开始执行时间(小时)')
