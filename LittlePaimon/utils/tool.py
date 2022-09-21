@@ -5,6 +5,33 @@ from collections import defaultdict
 from LittlePaimon.utils import aiorequests, logger
 from LittlePaimon.config import RESOURCE_BASE_PATH
 
+class DailyNumberLimiter:
+    """
+    每日次数限制
+    """
+    tz = pytz.timezone('Asia/Shanghai')
+
+    def __init__(self, max_num):
+        self.today = -1
+        self.count = defaultdict(int)
+        self.max = max_num
+
+    def check(self, key: str) -> bool:
+        now = datetime.now(self.tz)
+        day = (now - timedelta(hours=4)).day
+        if day != self.today:
+            self.today = day
+            self.count.clear()
+        return bool(self.count[key] < self.max)
+
+    def get_num(self, key: str):
+        return self.count[key]
+
+    def increase(self, key: str, num=1):
+        self.count[key] += num
+
+    def reset(self, key: str):
+        self.count[key] = 0    
 
 class FreqLimiter:
     """
