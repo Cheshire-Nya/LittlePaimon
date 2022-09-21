@@ -4,11 +4,14 @@ from nonebot import on_command, on_regex
 from nonebot.adapters.onebot.v11 import MessageEvent, Message, GroupMessageEvent
 from nonebot.params import RegexDict, CommandArg
 from nonebot.plugin import PluginMetadata
-from LittlePaimon.utils.tool import freq_limiter
+from LittlePaimon.utils.tool import freq_limiter, DailyNumberLimiter
 from LittlePaimon.manager.plugin_manager import plugin_manager as pm
 
 from .data_handle import load_user_data
 from .draw import draw_gacha_img
+
+_max = pm.config.sim_gacha_times_daily
+lmt = DailyNumberLimiter(_max)
 
 __plugin_meta__ = PluginMetadata(
     name='原神模拟抽卡',
@@ -67,7 +70,9 @@ show_log = on_command('模拟抽卡记录', aliases={'查看模拟抽卡记录'}
 async def _(event: MessageEvent, reGroup: Dict = RegexDict()):
     nickname = event.sender.nickname
     if isinstance(event, GroupMessageEvent):
-        if not freq_limiter.check(f'gacha-group{event.group_id}'):
+        if not lmt.check(f'gacha-group{event.group_id}-{event.user_id}'):
+            await sim_gacha.finish(f'今日抽卡机会无啦，明天四点后再来吧~')
+        elif not freq_limiter.check(f'gacha-group{event.group_id}'):
             await sim_gacha.finish(f'当前群模拟抽卡冷却ing...剩余{freq_limiter.left(f"gacha-group{event.group_id}")}秒')
         elif not freq_limiter.check(f'gacha-group{event.group_id}-{event.user_id}'):
             await sim_gacha.finish(f'你的模拟抽卡冷却ing...剩余{freq_limiter.left(f"gacha-group{event.group_id}-{event.user_id}")}秒', at_sender=True)
@@ -81,6 +86,7 @@ async def _(event: MessageEvent, reGroup: Dict = RegexDict()):
     if isinstance(event, GroupMessageEvent):
         freq_limiter.start(f'gacha-group{event.group_id}', pm.config.sim_gacha_cd_group)
         freq_limiter.start(f'gacha-group{event.group_id}-{event.user_id}', pm.config.sim_gacha_cd_member)
+        lmt.increase(f'gacha-group{event.group_id}-{event.user_id}')
     await sim_gacha.finish(result)
 
 
