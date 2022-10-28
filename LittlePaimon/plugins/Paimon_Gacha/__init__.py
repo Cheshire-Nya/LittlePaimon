@@ -10,8 +10,8 @@ from LittlePaimon.manager.plugin_manager import plugin_manager as pm
 from .data_handle import load_user_data
 from .draw import draw_gacha_img
 
-_max = pm.config.sim_gacha_times_daily
-lmt = DailyNumberLimiter(_max)
+lmt = DailyNumberLimiter(pm.config.sim_gacha_times_daily)
+#获取config中的抽卡限制次数
 
 __plugin_meta__ = PluginMetadata(
     name='原神模拟抽卡',
@@ -70,12 +70,17 @@ show_log = on_command('模拟抽卡记录', aliases={'查看模拟抽卡记录'}
 async def _(event: MessageEvent, reGroup: Dict = RegexDict()):
     nickname = event.sender.nickname
     if isinstance(event, GroupMessageEvent):
-        if not lmt.check(f'gacha-group{event.group_id}-{event.user_id}'):
+        if not lmt.check(f'gacha-group{event.user_id}'):
             await sim_gacha.finish(f'今日抽卡机会无啦，明天四点后再来吧~')
         elif not freq_limiter.check(f'gacha-group{event.group_id}'):
             await sim_gacha.finish(f'当前群模拟抽卡冷却ing...剩余{freq_limiter.left(f"gacha-group{event.group_id}")}秒')
-        elif not freq_limiter.check(f'gacha-group{event.group_id}-{event.user_id}'):
-            await sim_gacha.finish(f'你的模拟抽卡冷却ing...剩余{freq_limiter.left(f"gacha-group{event.group_id}-{event.user_id}")}秒', at_sender=True)
+        elif not freq_limiter.check(f'gacha-group{event.user_id}'):
+            await sim_gacha.finish(f'你的模拟抽卡冷却ing...剩余{freq_limiter.left(f"gacha-group{event.user_id}")}秒', at_sender=True)
+    elif isinstance(event, PrivateMessageEvent):
+        if not lmt.check(f'gacha-group{event.user_id}'):
+            await sim_gacha.finish(f'今日抽卡机会无啦，明天四点后再来吧~')
+        elif not freq_limiter.check(f'gacha-group{event.user_id}'):
+            await sim_gacha.finish(f'你的模拟抽卡冷却ing...剩余{freq_limiter.left(f"gacha-group{event.user_id}")}秒', at_sender=True)
     num = reGroup['num']
     pool = reGroup['pool']
     num = int(num) if num and num.isdigit() else 1
@@ -85,8 +90,11 @@ async def _(event: MessageEvent, reGroup: Dict = RegexDict()):
     result = await draw_gacha_img(event.user_id, pool, num, nickname)
     if isinstance(event, GroupMessageEvent):
         freq_limiter.start(f'gacha-group{event.group_id}', pm.config.sim_gacha_cd_group)
-        freq_limiter.start(f'gacha-group{event.group_id}-{event.user_id}', pm.config.sim_gacha_cd_member)
-        lmt.increase(f'gacha-group{event.group_id}-{event.user_id}')
+        freq_limiter.start(f'gacha-group{event.user_id}', pm.config.sim_gacha_cd_member)
+        lmt.increase(f'gacha-group{event.user_id}')
+    elif isinstance(event, PrivateMessageEvent):
+        freq_limiter.start(f'gacha-group{event.user_id}', pm.config.sim_gacha_cd_member)
+        lmt.increase(f'gacha-group{event.user_id}')
     await sim_gacha.finish(result)
 
 
