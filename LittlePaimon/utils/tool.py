@@ -6,7 +6,6 @@ import inspect
 import time
 import pytz
 from collections import defaultdict
-from datetime import datetime, timedelta
 from LittlePaimon.utils import aiorequests, logger
 from LittlePaimon.config import RESOURCE_BASE_PATH
 
@@ -22,8 +21,8 @@ class DailyNumberLimiter:
         self.max = max_num
 
     def check(self, key) -> bool:
-        now = datetime.now(self.tz)
-        day = (now - timedelta(hours=4)).day #每日四点刷新模拟抽卡次数
+        now = datetime.datetime.now(self.tz)
+        day = (now - datetime.timedelta(hours=4)).day #每日四点刷新计次
         if day != self.today:
             self.today = day
             self.count.clear()
