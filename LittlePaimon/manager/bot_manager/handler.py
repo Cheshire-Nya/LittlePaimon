@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 import git
 from nonebot.utils import run_sync
@@ -25,7 +26,8 @@ async def check_update():
         return f'当前已是最新版本：{__version__}'
     result = '检查到更新，日志如下：\n'
     for i, commit in enumerate(remote_commit, start=1):
-        result += f'{i}.{commit["commit"]["committer"]["date"].replace("T", " ").replace("Z", "")}\n' + commit['commit']['message'].replace(':bug:', '🐛').replace(
+        time_str = (datetime.datetime.strptime(commit['commit']['committer']['date'], '%Y-%m-%dT%H:%M:%SZ') + datetime.timedelta(hours=8)).strftime('%Y-%m-%d %H:%M:%S')
+        result += f'{i}.{time_str}\n' + commit['commit']['message'].replace(':bug:', '🐛').replace(
             ':sparkles:', '✨').replace(':memo:', '📝') + '\n'
     return result
 
@@ -37,11 +39,11 @@ def update():
     except InvalidGitRepositoryError:
         return '没有发现git仓库，无法通过git更新'
     origin = repo.remotes.origin
-    repo.git.stash()
+    # repo.git.stash()
     try:
         origin.pull()
     except GitCommandError as e:
         return f'更新失败，错误信息：{e}，请手动进行更新'
-    finally:
-        repo.git.stash('pop')
+    # finally:
+    #     repo.git.stash('pop')
     return f'更新完成，版本：{__version__}\n最新更新日志为：\n{repo.head.commit.message.replace(":bug:", "🐛").replace(":sparkles:", "✨").replace(":memo:", "📝")}\n可使用命令[@bot 重启]重启{NICKNAME}'

@@ -113,13 +113,14 @@ def mihoyo_headers(cookie, q='', b=None) -> dict:
     }
 
 
-def mihoyo_sign_headers(cookie: str) -> dict:
+def mihoyo_sign_headers(cookie: str, extra_headers: Optional[dict] = None) -> dict:
     """
     生成米游社签到headers
     :param cookie: cookie
+    :param extra_headers: 额外的headers参数
     :return: headers
     """
-    return {
+    header = {
         'User_Agent':        'Mozilla/5.0 (Linux; Android 12; Unspecified Device) AppleWebKit/537.36 (KHTML, like Gecko) '
                              'Version/4.0 Chrome/103.0.5060.129 Mobile Safari/537.36 miHoYoBBS/2.35.2',
         'Cookie':            cookie,
@@ -132,6 +133,9 @@ def mihoyo_sign_headers(cookie: str) -> dict:
                              '=e202009291139501&utm_source=bbs&utm_medium=mys&utm_campaign=icon',
         'x-rpc-app_version': '2.35.2'
     }
+    if extra_headers:
+        header.update(extra_headers)
+    return header
 
 
 async def check_retcode(data: dict, cookie_info, cookie_type: str, user_id: str, uid: str) -> bool:
@@ -209,14 +213,15 @@ async def get_cookie(user_id: str, uid: str, check: bool = True, own: bool = Fal
         return None, ''
 
 
-async def get_bind_game_info(cookie) -> Optional[dict]:
+async def get_bind_game_info(cookie: str, use_for_public: bool = False) -> Optional[dict]:
     """
     通过cookie，获取米游社绑定的原神游戏信息
     :param cookie: cookie
+    :param use_for_public: 是否用于公共cookie
     :return: 原神信息
     """
     if mys_id := re.search(r'(account_id|ltuid|stuid|login_uid)=(\d*)', cookie):
-        mys_id = mys_id.group(2)
+        mys_id = mys_id[2]
         data = (await aiorequests.get(url=GAME_RECORD_API,
                                       headers=mihoyo_headers(cookie, f'uid={mys_id}'),
                                       params={
@@ -227,6 +232,8 @@ async def get_bind_game_info(cookie) -> Optional[dict]:
                 if game_data['game_id'] == 2:
                     game_data['mys_id'] = mys_id
                     return game_data
+            if use_for_public:
+                return {'game_biz': 'hk4e_cn', 'mys_id': mys_id}
     return None
 
 

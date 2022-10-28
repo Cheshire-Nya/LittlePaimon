@@ -83,9 +83,8 @@ class PluginManager:
                 await asyncio.gather(*[PluginPermission.update_or_create(name=plugin.name, session_id=user['user_id'],
                                                                          session_type='user') for user in user_list])
             if plugin.name not in hidden_plugins:
-                metadata = plugin.metadata
                 if plugin.name not in self.data:
-                    if metadata:
+                    if metadata := plugin.metadata:
                         self.data[plugin.name] = PluginInfo.parse_obj({
                             'name':        metadata.name,
                             'module_name': plugin.name,
@@ -101,7 +100,7 @@ class PluginManager:
                 for matcher in matchers:
                     if matcher._default_state:
                         matcher_info = MatcherInfo.parse_obj(matcher._default_state)
-                        if matcher_info.pm_name not in [m.pm_name for m in self.data[plugin.name].matchers]:
+                        if self.data[plugin.name].matchers is not None and matcher_info.pm_name not in [m.pm_name for m in self.data[plugin.name].matchers]:
                             self.data[plugin.name].matchers.append(matcher_info)
         self.save()
         logger.success('插件管理器', '<g>初始化完成</g>')
@@ -121,4 +120,15 @@ class PluginManager:
             if plugin.matchers:
                 plugin.matchers.sort(key=lambda x: x.pm_priority)
                 plugin.matchers = [m for m in plugin.matchers if m.pm_show and m.pm_usage]
+        return plugin_list
+
+    async def get_plugin_list_for_admin(self) -> List[dict]:
+        load_plugins = nb_plugin.get_loaded_plugins()
+        load_plugins = [p.name for p in load_plugins]
+        plugin_list = [p.dict() for p in self.data.values()]
+        for plugin in plugin_list:
+            plugin['matchers'].sort(key=lambda x: x['pm_priority'])
+            plugin['isLoad'] = plugin['module_name'] in load_plugins
+            plugin['status'] = await PluginPermission.filter(name=plugin['module_name'], status=True).exists()
+        plugin_list.sort(key=lambda x: (x['isLoad'], x['status'], -x['priority']), reverse=True)
         return plugin_list

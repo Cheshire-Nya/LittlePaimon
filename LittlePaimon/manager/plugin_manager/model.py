@@ -57,8 +57,6 @@ class Config(BaseModel):
     ssbq_end: int = Field(6, alias='实时便签停止检查结束时间')
     ssbq_check: int = Field(16, alias='实时便签检查间隔')
 
-    AI_voice_cooldown: int = Field(10, alias='原神语音合成冷却')
-
     ys_auto_update: int = Field(24, alias='ys自动更新小时')
     ysa_auto_update: int = Field(24, alias='ysa自动更新小时')
     ysd_auto_update: int = Field(6, alias='ysd自动更新小时')
@@ -70,3 +68,11 @@ class Config(BaseModel):
     auto_add_friend: bool = Field(False, alias='自动接受好友请求')
     auto_add_group: bool = Field(False, alias='自动接受群邀请')
     notice_event: bool = Field(True, alias='启用好友和群欢迎消息')
+
+    screenshot_enable: bool = Field(True, alias='启用网页截图权限')
+
+    guess_voice_time: int = Field(30, alias='原神猜语音时间')
+
+    admin_enable: bool = Field(True, alias='启用Web端')
+    admin_password: str = Field('admin', alias='Web端管理员密码')
+    secret_key: str = Field('49c294d32f69b732ef6447c18379451ce1738922a75cd1d4812ef150318a2ed0', alias='Web端token密钥')

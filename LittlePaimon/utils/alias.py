@@ -92,10 +92,10 @@ def get_chara_icon(name: Optional[str] = None, chara_id: Optional[int] = None,
     """
     if name and not chara_id:
         chara_id = get_id_by_name(name)
-    info = info_file.get(str(chara_id))
-    if not info:
+    if info := info_file.get(str(chara_id)):
+        side_icon = info['SideIconName']
+    else:
         return None
-    side_icon = info['SideIconName']
     if icon_type == 'side':
         return side_icon
     elif icon_type == 'avatar':

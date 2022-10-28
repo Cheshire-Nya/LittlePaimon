@@ -202,12 +202,13 @@ class MihoyoBBSCoin:
             req = await aiorequests.post(url=bbs_Signurl, json={'gids': i['id']}, headers=header)
             data = req.json()
             if data['retcode'] != 0:
-                self.is_valid = False
+                if data['retcode'] != 1034:
+                    self.is_valid = False
                 self.state = 'Cookie已失效' if data['retcode'] in [-100,
                                                                 10001] else f"出错了:{data['retcode']} {data['message']}"
                 logger.info('米游币自动获取', f'➤➤<r>{self.state}</r>')
-                return self.state
-            await asyncio.sleep(random.randint(3, 6))
+                return f'讨论区签到：{self.state}'
+            await asyncio.sleep(random.randint(15, 30))
         logger.info('米游币自动获取', '➤➤讨论区签到<g>完成</g>')
         return '讨论区签到：完成！'
 
@@ -223,7 +224,7 @@ class MihoyoBBSCoin:
             data = req.json()
             if data['message'] == 'OK':
                 num_ok += 1
-            await asyncio.sleep(random.randint(3, 6))
+            await asyncio.sleep(random.randint(5, 10))
         logger.info('米游币自动获取', '➤➤看帖任务<g>完成</g>')
         return f'浏览帖子：完成{str(num_ok)}个！'
 
@@ -246,7 +247,7 @@ class MihoyoBBSCoin:
             if data['message'] == 'OK':
                 num_ok += 1
             # 取消点赞
-            await asyncio.sleep(random.randint(2, 4))
+            await asyncio.sleep(random.randint(3, 6))
             req = await aiorequests.post(url=bbs_Likeurl,
                                          headers=self.headers,
                                          json={
@@ -257,7 +258,7 @@ class MihoyoBBSCoin:
             if data['message'] == 'OK':
                 num_cancel += 1
         logger.info('米游币自动获取', '➤➤点赞任务<g>完成</g>')
-        await asyncio.sleep(random.randint(3, 6))
+        await asyncio.sleep(random.randint(5, 10))
         return f'点赞帖子：完成{str(num_ok)}个！'
 
     async def share_post(self):
@@ -274,9 +275,9 @@ class MihoyoBBSCoin:
             if data['message'] == 'OK':
                 return '分享帖子：完成！'
             else:
-                await asyncio.sleep(random.randint(4, 7))
+                await asyncio.sleep(random.randint(5, 10))
         logger.info('米游币自动获取', '➤➤分享任务<g>完成</g>')
-        await asyncio.sleep(random.randint(3, 6))
+        await asyncio.sleep(random.randint(5, 10))
         return '分享帖子：完成！'
 
 
@@ -301,6 +302,10 @@ async def mhy_bbs_coin(user_id: str, uid: str) -> str:
 
 
 @scheduler.scheduled_job('cron', hour=pm.config.auto_myb_hour, minute=pm.config.auto_myb_minute, misfire_grace_time=10)
+async def _():
+    await bbs_auto_coin()
+
+
 async def bbs_auto_coin():
     """
     指定时间，执行所有米游币获取订阅任务， 并将结果分群绘图发送
@@ -311,7 +316,7 @@ async def bbs_auto_coin():
     subs = await MihoyoBBSSub.filter(sub_event='米游币自动获取').all()
     if not subs:
         return
-    logger.info('米游币自动获取', f'开始执行米游币自动获取，共<m>{len(subs)}</m>个任务，预计花费<m>{round(75 * len(subs) / 60, 2)}</m>分钟')
+    logger.info('米游币自动获取', f'开始执行米游币自动获取，共<m>{len(subs)}</m>个任务，预计花费<m>{round(100 * len(subs) / 60, 2)}</m>分钟')
     coin_result_group = defaultdict(list)
     coin_result_private = defaultdict(list)
     for sub in subs:
@@ -328,7 +333,7 @@ async def bbs_auto_coin():
                 'result': '出错' not in result and 'Cookie' not in result,
                 'msg': result
             })
-        await asyncio.sleep(random.randint(3, 6))
+        await asyncio.sleep(random.randint(15, 25))
 
     for group_id, result_list in coin_result_group.items():
         result_num = len(result_list)
