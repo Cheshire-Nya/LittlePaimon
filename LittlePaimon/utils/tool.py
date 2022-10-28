@@ -21,21 +21,21 @@ class DailyNumberLimiter:
         self.count = defaultdict(int)
         self.max = max_num
 
-    def check(self, key: str) -> bool:
+    def check(self, key) -> bool:
         now = datetime.now(self.tz)
-        day = (now - timedelta(hours=4)).day
+        day = (now - timedelta(hours=4)).day #每日四点刷新模拟抽卡次数
         if day != self.today:
             self.today = day
             self.count.clear()
         return bool(self.count[key] < self.max)
 
-    def get_num(self, key: str):
+    def get_num(self, key):
         return self.count[key]
 
-    def increase(self, key: str, num=1):
+    def increase(self, key, num=1):
         self.count[key] += num
 
-    def reset(self, key: str):
+    def reset(self, key):
         self.count[key] = 0    
 
 class FreqLimiter:
