@@ -77,6 +77,15 @@ sim_gacha_form = Form(
             displayMode='enhance',
             suffix='次',
             min=1
+        ),
+        InputNumber(
+            label='每人每日抽卡次数',
+            name='每日抽卡次数',
+            value='${每日抽卡次数}',
+            labelRemark=Remark(content='限制每个qq单日可模拟抽卡次数'),
+            displayMode='enhance',
+            suffix='次',
+            min=0,
         )
     ],
     actions=action_button
