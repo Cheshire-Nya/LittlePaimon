@@ -4,13 +4,13 @@ from nonebot import on_command, on_regex
 from nonebot.adapters.onebot.v11 import MessageEvent, Message, GroupMessageEvent
 from nonebot.params import RegexDict, CommandArg
 from nonebot.plugin import PluginMetadata
-from LittlePaimon.utils.tool import freq_limiter, DailyNumberLimiter
+from LittlePaimon.utils.tool import freq_limiter
 from LittlePaimon.manager.plugin_manager import plugin_manager as pm
 
 from .data_handle import load_user_data
 from .draw import draw_gacha_img
 
-lmt = DailyNumberLimiter(pm.config.sim_gacha_times_daily)
+lmt = DailyNumberLimiter(config.sim_gacha_times_daily)
 #获取config中的抽卡限制次数
 
 __plugin_meta__ = PluginMetadata(
@@ -85,15 +85,15 @@ async def _(event: MessageEvent, reGroup: Dict = RegexDict()):
     pool = reGroup['pool']
     num = int(num) if num and num.isdigit() else 1
     if num > pm.config.sim_gacha_max:
-        await sim_gacha.finish(f'单次最多只能{pm.config.sim_gacha_max}十连哦！')
+        await sim_gacha.finish(f'单次最多只能{config.sim_gacha_max}十连哦！')
     pool = pool or '角色1'
     result = await draw_gacha_img(event.user_id, pool, num, nickname)
     if isinstance(event, GroupMessageEvent):
-        freq_limiter.start(f'gacha-group{event.group_id}', pm.config.sim_gacha_cd_group)
-        freq_limiter.start(f'gacha-group{event.user_id}', pm.config.sim_gacha_cd_member)
+        freq_limiter.start(f'gacha-group{event.group_id}', config.sim_gacha_cd_group)
+        freq_limiter.start(f'gacha-group{event.user_id}', config.sim_gacha_cd_member)
         lmt.increase(f'gacha-group{event.user_id}')
     elif isinstance(event, PrivateMessageEvent):
-        freq_limiter.start(f'gacha-group{event.user_id}', pm.config.sim_gacha_cd_member)
+        freq_limiter.start(f'gacha-group{event.user_id}', config.sim_gacha_cd_member)
         lmt.increase(f'gacha-group{event.user_id}')
     await sim_gacha.finish(result)
 
