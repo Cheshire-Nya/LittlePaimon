@@ -4,6 +4,7 @@ import functools
 import hashlib
 import inspect
 import time
+import pytz
 from collections import defaultdict
 from pathlib import Path
 
@@ -12,6 +13,34 @@ from .logger import logger
 from .requests import aiorequests
 
 RESOURCE_BASE_PATH = Path() / 'resources'
+
+class DailyNumberLimiter:
+    """
+    每日计次
+    """
+    tz = pytz.timezone('Asia/Shanghai')
+
+    def __init__(self, max_num):
+        self.today = -1
+        self.count = defaultdict(int)
+        self.max = max_num
+
+    def check(self, key) -> bool:
+        now = datetime.datetime.now(self.tz)
+        day = (now - datetime.timedelta(hours=0)).day #每日零点刷新计次
+        if day != self.today:
+            self.today = day
+            self.count.clear()
+        return bool(self.count[key] < self.max)
+
+    def get_num(self, key):
+        return self.count[key]
+
+    def increase(self, key, num=1):
+        self.count[key] += num
+
+    def reset(self, key):
+        self.count[key] = 0    
 
 
 class FreqLimiter:
